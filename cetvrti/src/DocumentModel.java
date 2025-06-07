@@ -28,7 +28,6 @@ public class DocumentModel {
     };
 
     public DocumentModel() {
-        // Empty constructor
     }
 
     public void clear() {
