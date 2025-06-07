@@ -1,3 +1,7 @@
+
+import java.util.List;
+import java.util.Stack;
+
 public interface GraphicalObject {
     boolean isSelected();
     void setSelected(boolean selected);
@@ -15,4 +19,7 @@ public interface GraphicalObject {
     void removeGraphicalObjectListener(GraphicalObjectListener l);
     String getShapeName();
     GraphicalObject duplicate();
+    String getShapeID();
+    void save(List<String> rows);
+    void load(Stack<GraphicalObject> stack, String data);
 }

@@ -1,3 +1,6 @@
+import java.util.List;
+import java.util.Stack;
+
 public class Oval extends AbstractGraphicalObject {
     public Oval() {
         super(new Point[]{new Point(150, 100), new Point(100, 150)});
@@ -28,13 +31,12 @@ public class Oval extends AbstractGraphicalObject {
         int a = Math.abs(right.getX() - centerX);
         int b = Math.abs(bottom.getY() - centerY);
 
-        // Simplified distance calculation (not exact)
         double dx = mousePoint.getX() - centerX;
         double dy = mousePoint.getY() - centerY;
         double normalized = (dx*dx)/(a*a) + (dy*dy)/(b*b);
 
         if (normalized <= 1.0) {
-            return 0; // Point is inside the oval
+            return 0;
         } else {
             return Math.sqrt(dx*dx + dy*dy) - Math.sqrt(a*a + b*b);
         }
@@ -43,6 +45,31 @@ public class Oval extends AbstractGraphicalObject {
     @Override
     public String getShapeName() {
         return "Oval";
+    }
+
+    @Override
+    public String getShapeID() {
+        return "@OVAL";
+    }
+
+    @Override
+    public void save(List<String> rows) {
+        Point right = getHotPoint(0);
+        Point bottom = getHotPoint(1);
+        rows.add(String.format("%s %d %d %d %d",
+                getShapeID(), right.getX(), right.getY(), bottom.getX(), bottom.getY()));
+    }
+
+    @Override
+    public void load(Stack<GraphicalObject> stack, String data) {
+        String[] parts = data.trim().split("\\s+");
+        int x1 = Integer.parseInt(parts[0]);
+        int y1 = Integer.parseInt(parts[1]);
+        int x2 = Integer.parseInt(parts[2]);
+        int y2 = Integer.parseInt(parts[3]);
+
+        Oval newOval = new Oval(new Point(x1, y1), new Point(x2, y2));
+        stack.push(newOval);
     }
 
     @Override
@@ -62,7 +89,6 @@ public class Oval extends AbstractGraphicalObject {
         int a = Math.abs(right.getX() - centerX);
         int b = Math.abs(bottom.getY() - centerY);
 
-        // Approximate oval with polygon
         int points = 64;
         Point[] ovalPoints = new Point[points];
         for (int i = 0; i < points; i++) {

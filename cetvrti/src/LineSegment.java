@@ -1,3 +1,6 @@
+import java.util.List;
+import java.util.Stack;
+
 public class LineSegment extends AbstractGraphicalObject {
     public LineSegment() {
         super(new Point[]{new Point(100, 100), new Point(200, 150)});
@@ -32,6 +35,31 @@ public class LineSegment extends AbstractGraphicalObject {
     @Override
     public String getShapeName() {
         return "Linija";
+    }
+
+    @Override
+    public String getShapeID() {
+        return "@LINE";
+    }
+
+    @Override
+    public void save(List<String> rows) {
+        Point start = getHotPoint(0);
+        Point end = getHotPoint(1);
+        rows.add(String.format("%s %d %d %d %d",
+                getShapeID(), start.getX(), start.getY(), end.getX(), end.getY()));
+    }
+
+    @Override
+    public void load(Stack<GraphicalObject> stack, String data) {
+        String[] parts = data.trim().split("\\s+");
+        int x1 = Integer.parseInt(parts[0]);
+        int y1 = Integer.parseInt(parts[1]);
+        int x2 = Integer.parseInt(parts[2]);
+        int y2 = Integer.parseInt(parts[3]);
+
+        LineSegment newLine = new LineSegment(new Point(x1, y1), new Point(x2, y2));
+        stack.push(newLine);
     }
 
     @Override

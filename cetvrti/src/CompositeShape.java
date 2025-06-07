@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 
 public class CompositeShape implements GraphicalObject {
 
@@ -11,7 +12,6 @@ public class CompositeShape implements GraphicalObject {
         this.children = new ArrayList<>(children);
         this.selected = false;
 
-        // Dodaj listener na svu djecu
         for (GraphicalObject child : this.children) {
             child.addGraphicalObjectListener(new GraphicalObjectListener() {
                 @Override
@@ -21,8 +21,6 @@ public class CompositeShape implements GraphicalObject {
 
                 @Override
                 public void graphicalObjectSelectionChanged(GraphicalObject go) {
-                    // Djeca kompozita ne mogu biti selektirana individualno
-                    // Deselekcija djeteta se može dogoditi kad se kompozit deselektira
                 }
             });
         }
@@ -40,7 +38,6 @@ public class CompositeShape implements GraphicalObject {
     @Override
     public void setSelected(boolean selected) {
         this.selected = selected;
-        // Kad se kompozit deselektira, deselektiraj i svu djecu
         if (!selected) {
             for (GraphicalObject child : children) {
                 child.setSelected(false);
@@ -51,7 +48,7 @@ public class CompositeShape implements GraphicalObject {
 
     @Override
     public int getNumberOfHotPoints() {
-        return 0; // Kompozit nema hot-pointove
+        return 0;
     }
 
     @Override
@@ -66,7 +63,7 @@ public class CompositeShape implements GraphicalObject {
 
     @Override
     public boolean isHotPointSelected(int index) {
-        return false; // Nema hot-pointova
+        return false;
     }
 
     @Override
@@ -76,12 +73,11 @@ public class CompositeShape implements GraphicalObject {
 
     @Override
     public double getHotPointDistance(int index, Point mousePoint) {
-        return Double.MAX_VALUE; // Nema hot-pointova
+        return Double.MAX_VALUE;
     }
 
     @Override
     public void translate(Point delta) {
-        // Delegiranje - pomakni svu djecu
         for (GraphicalObject child : children) {
             child.translate(delta);
         }
@@ -94,7 +90,6 @@ public class CompositeShape implements GraphicalObject {
             return new Rectangle(0, 0, 0, 0);
         }
 
-        // Unija svih bounding boxova djece
         Rectangle firstBbox = children.get(0).getBoundingBox();
         int minX = firstBbox.getX();
         int minY = firstBbox.getY();
@@ -114,7 +109,6 @@ public class CompositeShape implements GraphicalObject {
 
     @Override
     public double selectionDistance(Point mousePoint) {
-        // Delegiranje - vrati minimalnu udaljenost od bilo kojeg djeteta
         double minDistance = Double.MAX_VALUE;
         for (GraphicalObject child : children) {
             double distance = child.selectionDistance(mousePoint);
@@ -125,7 +119,6 @@ public class CompositeShape implements GraphicalObject {
 
     @Override
     public void render(Renderer r) {
-        // Delegiranje - renderuj svu djecu
         for (GraphicalObject child : children) {
             child.render(r);
         }
@@ -144,6 +137,33 @@ public class CompositeShape implements GraphicalObject {
     @Override
     public String getShapeName() {
         return "Composite (" + children.size() + " objects)";
+    }
+
+    @Override
+    public String getShapeID() {
+        return "@COMP";
+    }
+
+    @Override
+    public void save(List<String> rows) {
+        for (GraphicalObject child : children) {
+            child.save(rows);
+        }
+        rows.add(String.format("%s %d", getShapeID(), children.size()));
+    }
+
+    @Override
+    public void load(Stack<GraphicalObject> stack, String data) {
+        String[] parts = data.trim().split("\\s+");
+        int childrenCount = Integer.parseInt(parts[0]);
+
+        List<GraphicalObject> newChildren = new ArrayList<>();
+        for (int i = 0; i < childrenCount; i++) {
+            newChildren.add(0, stack.pop());
+        }
+
+        CompositeShape newComposite = new CompositeShape(newChildren);
+        stack.push(newComposite);
     }
 
     @Override

@@ -5,7 +5,11 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.util.*;
 import java.util.List;
 
 public class GUI extends JFrame {
@@ -41,6 +45,14 @@ public class GUI extends JFrame {
         JButton svgExportButton = new JButton("SVG Export");
         svgExportButton.addActionListener(e -> exportToSVG());
         toolBar.add(svgExportButton);
+
+        JButton saveButton = new JButton("Pohrani");
+        saveButton.addActionListener(e -> saveDrawing());
+        toolBar.add(saveButton);
+
+        JButton loadButton = new JButton("Učitaj");
+        loadButton.addActionListener(e -> loadDrawing());
+        toolBar.add(loadButton);
 
         toolBar.addSeparator();
 
@@ -122,6 +134,102 @@ public class GUI extends JFrame {
         });
     }
 
+    private void loadDrawing() {
+        String fileName = pitajImeZaUcitavanje();
+        if (fileName != null) {
+            try {
+                List<String> rows = new ArrayList<>();
+                try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        rows.add(line);
+                    }
+                }
+
+                Stack<GraphicalObject> stack = new Stack<>();
+                Map<String, GraphicalObject> prototypes = new HashMap<>();
+                prototypes.put("@LINE", new LineSegment());
+                prototypes.put("@OVAL", new Oval());
+                prototypes.put("@COMP", new CompositeShape(new ArrayList<>()));
+
+                for (String row : rows) {
+                    String[] parts = row.split("\\s+", 2);
+                    String shapeID = parts[0];
+                    String data = parts.length > 1 ? parts[1] : "";
+
+                    GraphicalObject prototype = prototypes.get(shapeID);
+                    if (prototype != null) {
+                        prototype.load(stack, data);
+                    }
+                }
+
+                model.clear();
+                while (!stack.isEmpty()) {
+                    model.addGraphicalObject(stack.pop());
+                }
+
+                JOptionPane.showMessageDialog(this, "Crtež je uspješno učitan!", "Učitavanje", JOptionPane.INFORMATION_MESSAGE);
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(this, "Greška pri čitanju datoteke: " + ex.getMessage(), "Greška", JOptionPane.ERROR_MESSAGE);
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Neispravni podaci u datoteci!", "Greška", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private String pitajImeZaUcitavanje() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Odaberite datoteku za učitavanje");
+
+        int userSelection = fileChooser.showOpenDialog(this);
+
+        if (userSelection == JFileChooser.APPROVE_OPTION) {
+            return fileChooser.getSelectedFile().getAbsolutePath();
+        }
+
+        return null;
+    }
+
+    private void saveDrawing() {
+        String fileName = pitajImeZaSnimanje();
+        if (fileName != null) {
+            try {
+                List<String> rows = new ArrayList<>();
+                for (GraphicalObject obj : model.list()) {
+                    obj.save(rows);
+                }
+
+                try (FileWriter writer = new FileWriter(fileName)) {
+                    for (String row : rows) {
+                        writer.write(row + "\n");
+                    }
+                }
+
+                JOptionPane.showMessageDialog(this, "Crtež je uspješno snimljen!", "Snimanje", JOptionPane.INFORMATION_MESSAGE);
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(this, "Greška pri snimanju datoteke: " + ex.getMessage(), "Greška", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private String pitajImeZaSnimanje() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Odaberite ime i lokaciju datoteke za snimanje");
+        fileChooser.setSelectedFile(new java.io.File("drawing.jvd"));
+
+        int userSelection = fileChooser.showSaveDialog(this);
+
+        if (userSelection == JFileChooser.APPROVE_OPTION) {
+            String fileName = fileChooser.getSelectedFile().getAbsolutePath();
+            if (!fileName.toLowerCase().endsWith(".jvd")) {
+                fileName += ".jvd";
+            }
+            return fileName;
+        }
+
+        return null;
+    }
+
     private void exportToSVG() {
         String fileName = pitajIme();
         if (fileName != null) {
@@ -155,7 +263,6 @@ public class GUI extends JFrame {
 
         return null;
     }
-
 
     public void setState(State newState) {
         if (currentState != null) {
