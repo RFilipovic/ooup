@@ -89,6 +89,8 @@ public class GUI extends JFrame {
         canvas.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent evt) {
+                canvas.requestFocusInWindow();
+
                 Point mousePoint = new Point(evt.getX(), evt.getY());
                 boolean shiftDown = evt.isShiftDown();
                 boolean ctrlDown = evt.isControlDown();
@@ -130,6 +132,12 @@ public class GUI extends JFrame {
 
             @Override
             public void keyTyped(KeyEvent e) {
+                char c = e.getKeyChar();
+                if (c == '+') {
+                    currentState.keyPressed(KeyEvent.VK_PLUS);
+                } else if (c == '-') {
+                    currentState.keyPressed(KeyEvent.VK_MINUS);
+                }
             }
         });
     }
@@ -215,14 +223,14 @@ public class GUI extends JFrame {
     private String pitajImeZaSnimanje() {
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle("Odaberite ime i lokaciju datoteke za snimanje");
-        fileChooser.setSelectedFile(new java.io.File("drawing.jvd"));
+        fileChooser.setSelectedFile(new java.io.File("drawing.txt"));
 
         int userSelection = fileChooser.showSaveDialog(this);
 
         if (userSelection == JFileChooser.APPROVE_OPTION) {
             String fileName = fileChooser.getSelectedFile().getAbsolutePath();
-            if (!fileName.toLowerCase().endsWith(".jvd")) {
-                fileName += ".jvd";
+            if (!fileName.toLowerCase().endsWith(".txt")) {
+                fileName += ".txt";
             }
             return fileName;
         }
