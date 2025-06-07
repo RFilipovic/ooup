@@ -1,5 +1,3 @@
-
-import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,7 +10,6 @@ public class SelectShapeState implements State {
     private int selectedHotPointIndex = -1;
     private boolean isDragging = false;
 
-    // Za rectangle selection
     private Point selectionStart = null;
     private Point selectionEnd = null;
     private boolean isRectangleSelection = false;
@@ -21,64 +18,63 @@ public class SelectShapeState implements State {
         this.model = model;
     }
 
+
     @Override
     public void mouseDown(Point mousePoint, boolean shiftDown, boolean ctrlDown) {
         lastMousePoint = mousePoint;
         isDragging = false;
-        selectedHotPointIndex = -1;
 
-        // Reset rectangle selection
-        selectionStart = null;
-        selectionEnd = null;
-        isRectangleSelection = false;
-
-        // Ako je selektiran samo jedan objekt, provjeri hot-pointove
-        if (model.getSelectedObjects().size() == 1) {
-            GraphicalObject singleSelected = model.getSelectedObjects().get(0);
-            selectedHotPointIndex = model.findSelectedHotPoint(singleSelected, mousePoint);
-
-            if (selectedHotPointIndex != -1) {
-                selectedObject = singleSelected;
-                return; // Hot-point je selektiran, ne radi običnu selekciju
+        GraphicalObject clickedObject = null;
+        List<GraphicalObject> objects = model.list();
+        for (int i = objects.size() - 1; i >= 0; i--) {
+            GraphicalObject obj = objects.get(i);
+            if (obj.selectionDistance(mousePoint) <= 3) {
+                clickedObject = obj;
+                break;
             }
         }
 
-        // Pronađi objekt na poziciji miša
-        GraphicalObject clickedObject = model.findSelectedGraphicalObject(mousePoint);
-
         if (clickedObject != null) {
-            if (!ctrlDown) {
-                // Bez CTRL - deselektiraj sve osim kliknutog objekta
-                for (GraphicalObject obj : model.list()) {
-                    if (obj != clickedObject && obj.isSelected()) {
+            if (ctrlDown) {
+                clickedObject.setSelected(!clickedObject.isSelected());
+                selectedObject = clickedObject.isSelected() ? clickedObject : null;
+            } else if (shiftDown) {
+                clickedObject.setSelected(true);
+                selectedObject = clickedObject;
+            } else {
+                if (clickedObject.isSelected()) {
+                    selectedObject = clickedObject;
+
+                    for (int i = 0; i < clickedObject.getNumberOfHotPoints(); i++) {
+                        Point hotPoint = clickedObject.getHotPoint(i);
+                        if (GeometryUtil.distanceFromPoint(hotPoint, mousePoint) <= 3) {
+                            selectedHotPointIndex = i;
+                            return;
+                        }
+                    }
+                } else {
+                    for (GraphicalObject obj : model.list()) {
                         obj.setSelected(false);
                     }
+                    clickedObject.setSelected(true);
+                    selectedObject = clickedObject;
                 }
             }
-
-            // Toggle selekciju kliknutog objekta
-            clickedObject.setSelected(!clickedObject.isSelected());
-            selectedObject = clickedObject;
         } else {
-            // Klik na prazan prostor - pripremi rectangle selection
-            selectionStart = mousePoint;
+            if (!ctrlDown && !shiftDown) {
+                selectionStart = mousePoint;
+                isRectangleSelection = true;
 
-            if (!ctrlDown) {
-                // Bez CTRL - deselektiraj sve
                 for (GraphicalObject obj : model.list()) {
-                    if (obj.isSelected()) {
-                        obj.setSelected(false);
-                    }
+                    obj.setSelected(false);
                 }
             }
-            selectedObject = null;
         }
     }
 
     @Override
     public void mouseUp(Point mousePoint, boolean shiftDown, boolean ctrlDown) {
         if (isRectangleSelection && selectionStart != null && selectionEnd != null) {
-            // Završi rectangle selection
             performRectangleSelection(ctrlDown);
         }
 
