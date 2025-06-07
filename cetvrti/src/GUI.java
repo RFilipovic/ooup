@@ -27,18 +27,18 @@ public class GUI extends JFrame {
         Container cp = getContentPane();
         cp.setLayout(new BorderLayout());
 
-        // Toolbar
         JToolBar toolBar = new JToolBar();
 
-        // Dodaj gumb "Selektiraj"
         JButton selectButton = new JButton("Selektiraj");
         selectButton.addActionListener(e -> setState(new SelectShapeState(model)));
         toolBar.add(selectButton);
 
-        // Dodaj separator
+        JButton eraserButton = new JButton("Brisač");
+        eraserButton.addActionListener(e -> setState(new EraserState(model)));
+        toolBar.add(eraserButton);
+
         toolBar.addSeparator();
 
-        // Postojeći gumbovi za objekte
         for (GraphicalObject obj : objects) {
             JButton button = new JButton(obj.getShapeName());
             button.addActionListener(e -> {
@@ -48,7 +48,6 @@ public class GUI extends JFrame {
         }
         cp.add(toolBar, BorderLayout.NORTH);
 
-        // Canvas
         canvas = new JComponent() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -58,12 +57,9 @@ public class GUI extends JFrame {
 
                 for (GraphicalObject obj : model.list()) {
                     obj.render(r);
-
-                    // Pozovi afterDraw za svaki objekt (State će crtati selekciju)
                     currentState.afterDraw(r, obj);
                 }
 
-                // Pozovi afterDraw nakon crtanja čitavog crteža
                 currentState.afterDraw(r);
             }
         };
@@ -71,10 +67,8 @@ public class GUI extends JFrame {
         canvas.setFocusable(true);
         cp.add(canvas, BorderLayout.CENTER);
 
-        // Add model listener to repaint on changes
         model.addDocumentModelListener(() -> canvas.repaint());
 
-        // Mouse listeners koji pozivaju metode trenutnog stanja
         canvas.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent evt) {
@@ -103,11 +97,9 @@ public class GUI extends JFrame {
             }
         });
 
-        // Key listener koji poziva metode trenutnog stanja
         canvas.addKeyListener(new KeyListener() {
             @Override
             public void keyPressed(KeyEvent e) {
-                // ESC vraća u IdleState
                 if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
                     setState(new IdleState());
                 } else {
@@ -117,17 +109,14 @@ public class GUI extends JFrame {
 
             @Override
             public void keyReleased(KeyEvent e) {
-                // Nije potrebno za specifikaciju
             }
 
             @Override
             public void keyTyped(KeyEvent e) {
-                // Nije potrebno za specifikaciju
             }
         });
     }
 
-    // Metoda za promjenu stanja
     public void setState(State newState) {
         if (currentState != null) {
             currentState.onLeaving();
@@ -136,12 +125,10 @@ public class GUI extends JFrame {
         canvas.repaint();
     }
 
-    // Getter za trenutno stanje (može biti koristan kasnije)
     public State getCurrentState() {
         return currentState;
     }
 
-    // Getter za model (može biti koristan za implementaciju stanja)
     public DocumentModel getModel() {
         return model;
     }
