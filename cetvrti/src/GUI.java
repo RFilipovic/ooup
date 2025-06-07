@@ -5,6 +5,7 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
+import java.io.IOException;
 import java.util.List;
 
 public class GUI extends JFrame {
@@ -36,6 +37,10 @@ public class GUI extends JFrame {
         JButton eraserButton = new JButton("Brisač");
         eraserButton.addActionListener(e -> setState(new EraserState(model)));
         toolBar.add(eraserButton);
+
+        JButton svgExportButton = new JButton("SVG Export");
+        svgExportButton.addActionListener(e -> exportToSVG());
+        toolBar.add(svgExportButton);
 
         toolBar.addSeparator();
 
@@ -116,6 +121,41 @@ public class GUI extends JFrame {
             }
         });
     }
+
+    private void exportToSVG() {
+        String fileName = pitajIme();
+        if (fileName != null) {
+            try {
+                SVGRendererImpl r = new SVGRendererImpl(fileName);
+                for (GraphicalObject obj : model.list()) {
+                    obj.render(r);
+                }
+                r.close();
+                JOptionPane.showMessageDialog(this, "SVG datoteka je uspješno eksportirana!", "Export", JOptionPane.INFORMATION_MESSAGE);
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(this, "Greška pri pisanju datoteke: " + ex.getMessage(), "Greška", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private String pitajIme() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Odaberite ime i lokaciju SVG datoteke");
+        fileChooser.setSelectedFile(new java.io.File("drawing.svg"));
+
+        int userSelection = fileChooser.showSaveDialog(this);
+
+        if (userSelection == JFileChooser.APPROVE_OPTION) {
+            String fileName = fileChooser.getSelectedFile().getAbsolutePath();
+            if (!fileName.toLowerCase().endsWith(".svg")) {
+                fileName += ".svg";
+            }
+            return fileName;
+        }
+
+        return null;
+    }
+
 
     public void setState(State newState) {
         if (currentState != null) {
